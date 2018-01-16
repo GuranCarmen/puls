@@ -1,64 +1,57 @@
-/*
-  LiquidCrystal Library - Hello World
+#include<LiquidCrystal.h>
 
- Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
- library works with all LCD displays that are compatible with the
- Hitachi HD44780 driver. There are many of them out there, and you
- can usually tell them by the 16-pin interface.
+int CONTRAST           = 90;
+int BACKLIGHT          = 20;
+int i                  = 0;
+//defining lcd pins
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
- This sketch prints "Hello World!" to the LCD
- and shows the time.
+//  Variables
+int PulseSensorPurplePin = 0;        // Pulse Sensor PURPLE WIRE connected to ANALOG PIN 0
+int LED13 = 13;   //  The on-board Arduion LED
 
-  The circuit:
- * LCD RS pin to digital pin 12
- * LCD Enable pin to digital pin 11
- * LCD D4 pin to digital pin 5
- * LCD D5 pin to digital pin 4
- * LCD D6 pin to digital pin 3
- * LCD D7 pin to digital pin 2
- * LCD R/W pin to ground
- * LCD VSS pin to ground
- * LCD VCC pin to 5V
- * 10K resistor:
- * ends to +5V and ground
- * wiper to LCD VO pin (pin 3)
 
- Library originally added 18 Apr 2008
- by David A. Mellis
- library modified 5 Jul 2009
- by Limor Fried (http://www.ladyada.net)
- example added 9 Jul 2009
- by Tom Igoe
- modified 22 Nov 2010
- by Tom Igoe
- modified 7 Nov 2016
- by Arturo Guadalupi
+int Signal;                // holds the incoming raw data. Signal value can range from 0-1024
+int Threshold = 550;            // Determine which Signal to "count as a beat", and which to ingore.
 
- This example code is in the public domain.
-
- http://www.arduino.cc/en/Tutorial/LiquidCrystalHelloWorld
-
-*/
-
-// include the library code:
-#include <LiquidCrystal.h>
-
-// initialize the library by associating any needed LCD interface pin
-// with the arduino pin number it is connected to
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+int max = 0;
 
 void setup() {
-  // set up the LCD's number of columns and rows:
-  lcd.begin(16, 2);
-  // Print a message to the LCD.
-  lcd.print("hello, world!");
-}
 
+  //Display setup
+  analogWrite(6, CONTRAST);
+  analogWrite(9, BACKLIGHT);
+  Serial.begin(9600);
+  Serial.setTimeout(50);
+  lcd.begin(16,2);
+  lcd.print("Pulse Value");
+
+  //Pulse SetUp
+  pinMode(LED13,OUTPUT);         // pin that will blink to your heartbeat!
+
+}
 void loop() {
-  // set the cursor to column 0, line 1
-  // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
-  // print the number of seconds since reset:
-  lcd.print(millis() / 1000);
+  Signal = analogRead(PulseSensorPurplePin);  // Read the PulseSensor's value.
+                                              // Assign this value to the "Signal" variable.
+  Serial.println(Signal);                    // Send the Signal value to Serial Plotter.
+
+  if(Signal > Threshold){                          // If the signal is above "550", then "turn-on" Arduino's on-Board LED.
+     digitalWrite(LED13,HIGH);
+   } else {
+     digitalWrite(LED13,LOW);                //  Else, the sigal must be below "550", so "turn-off" this LED.
+   }
+
+   //Logic for displaying pulse value on lcd
+   if (Signal > max) {
+     max = Signal;
+   } else {
+     if (Signal < max) {
+       lcd.setCursor(0, 1);
+       lcd.print(max);
+       max = Signal;
+       delay(1000);
+     }
+   }
+
+    delay(10);
 }
